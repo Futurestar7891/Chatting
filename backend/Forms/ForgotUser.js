@@ -58,7 +58,7 @@ const sendEmail = async (to, otp) => {
 };
 
 // Send OTP Route
-router.post("https://chit-chat-mocha.vercel.app/send-otp", async (req, res) => {
+router.post("/send-otp", async (req, res) => {
   const { emailOrMobile } = req.body;
 
   if (!emailOrMobile) {
@@ -108,106 +108,99 @@ router.post("https://chit-chat-mocha.vercel.app/send-otp", async (req, res) => {
 });
 
 // Validate OTP Route
-router.post(
-  "https://chit-chat-mocha.vercel.app/validate-otp",
-  async (req, res) => {
-    const { otp } = req.body;
-    console.log(otp);
+router.post("/validate-otp", async (req, res) => {
+  const { otp } = req.body;
+  console.log(otp);
 
-    try {
-      // Find the user by OTP
-      const user = await UserSchema.findOne({ otp: otp });
-      // console.log(user);
+  try {
+    // Find the user by OTP
+    const user = await UserSchema.findOne({ otp: otp });
+    // console.log(user);
 
-      if (!user) {
-        return res.status(400).json({ message: "Invalid OTP." });
-      }
-
-      // Check if the OTP has expired
-      if (user.otpExpiry < Date.now()) {
-        user.otp = null;
-        user.otpExpiry = null;
-        return res.status(400).json({ message: "OTP has expired." });
-      }
-      await user.save();
-
-      return res.status(200).json({ message: "OTP validated successfully." });
-    } catch (error) {
-      console.error("Error validating OTP:", error);
-      return res
-        .status(500)
-        .json({ message: "An error occurred. Please try again." });
+    if (!user) {
+      return res.status(400).json({ message: "Invalid OTP." });
     }
+
+    // Check if the OTP has expired
+    if (user.otpExpiry < Date.now()) {
+      user.otp = null;
+      user.otpExpiry = null;
+      return res.status(400).json({ message: "OTP has expired." });
+    }
+    await user.save();
+
+    return res.status(200).json({ message: "OTP validated successfully." });
+  } catch (error) {
+    console.error("Error validating OTP:", error);
+    return res
+      .status(500)
+      .json({ message: "An error occurred. Please try again." });
   }
-);
+});
 
 // Forgot Password Route
-router.post(
-  "https://chit-chat-mocha.vercel.app/reset-password",
-  resetPasswordValidation,
-  async (req, res) => {
-    const { emailOrMobile, newPassword, confirmPassword } = req.body;
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      const errorobject = {};
-      errors.array().forEach((object) => {
-        errorobject[object.path] = object.msg;
-      });
-      console.log(errors);
-      return res.status(400).json({ error: errorobject });
-    }
-
-    console.log(emailOrMobile, newPassword, confirmPassword);
-
-    try {
-      // Find the user using email or mobile
-      const user = await UserSchema.findOne({
-        $or: [{ Email: emailOrMobile }, { Mobile: emailOrMobile }],
-      });
-
-      if (!user) {
-        console.log("user not exist");
-        return res
-          .status(404)
-          .json({ message: "User not found or OTP not validated." });
-      }
-      console.log("userexist");
-      // console.log(user);
-      // Ensure OTP was validated before allowing password reset
-
-      if (user.otpExpiry + 300000 < Date.now()) {
-        user.otp = null;
-        user.otpExpiry = null;
-        return res.status(400).json({
-          message: "session for forgot password expired forgot again",
-        });
-      }
-
-      // Check if new password matches confirm password
-      if (newPassword !== confirmPassword) {
-        console.log("not matched");
-        return res
-          .status(400)
-          .json({ message: "New password and confirm password do not match." });
-      }
-
-      // Hash the new password
-      const hashedPassword = await hash(newPassword, 10);
-
-      // Update the user's password and clear OTP fields
-      user.Password = hashedPassword;
-      user.otp = null; // Clear OTP field
-      user.otpExpiry = null;
-      await user.save();
-      console.log("all things is set");
-      return res.status(200).json({ message: "Password reset successfully." });
-    } catch (error) {
-      console.error("Reset Password Error:", error);
-      return res
-        .status(500)
-        .json({ message: "An error occurred while resetting the password." });
-    }
+router.post("/reset-password", resetPasswordValidation, async (req, res) => {
+  const { emailOrMobile, newPassword, confirmPassword } = req.body;
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    const errorobject = {};
+    errors.array().forEach((object) => {
+      errorobject[object.path] = object.msg;
+    });
+    console.log(errors);
+    return res.status(400).json({ error: errorobject });
   }
-);
+
+  console.log(emailOrMobile, newPassword, confirmPassword);
+
+  try {
+    // Find the user using email or mobile
+    const user = await UserSchema.findOne({
+      $or: [{ Email: emailOrMobile }, { Mobile: emailOrMobile }],
+    });
+
+    if (!user) {
+      console.log("user not exist");
+      return res
+        .status(404)
+        .json({ message: "User not found or OTP not validated." });
+    }
+    console.log("userexist");
+    // console.log(user);
+    // Ensure OTP was validated before allowing password reset
+
+    if (user.otpExpiry + 300000 < Date.now()) {
+      user.otp = null;
+      user.otpExpiry = null;
+      return res
+        .status(400)
+        .json({ message: "session for forgot password expired forgot again" });
+    }
+
+    // Check if new password matches confirm password
+    if (newPassword !== confirmPassword) {
+      console.log("not matched");
+      return res
+        .status(400)
+        .json({ message: "New password and confirm password do not match." });
+    }
+
+    // Hash the new password
+    const hashedPassword = await hash(newPassword, 10);
+
+    // Update the user's password and clear OTP fields
+    user.Password = hashedPassword;
+    user.otp = null; // Clear OTP field
+    user.otpExpiry = null;
+    await user.save();
+    console.log("all things is set");
+    return res.status(200).json({ message: "Password reset successfully." });
+  } catch (error) {
+    console.error("Reset Password Error:", error);
+    return res
+      .status(500)
+      .json({ message: "An error occurred while resetting the password." });
+  }
+});
 
 module.exports = router;
