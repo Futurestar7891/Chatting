@@ -12,7 +12,7 @@ const server = http.createServer(app);
 
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "http://localhost:5173",
+    origin: "https://chit-chat-mocha.vercel.app",
     credentials: true,
   })
 );
@@ -20,7 +20,7 @@ app.use(express.json({ limit: "500mb" }));
 
 const io = new Server(server, {
   cors: {
-    origin: process.env.FRONTEND_URL || "http://localhost:5173",
+    origin: "https://chit-chat-mocha.vercel.app",
     methods: ["GET", "POST"],
     credentials: true,
   },
@@ -54,12 +54,12 @@ const Fetchcontactroute = require("./Contacts/Fetchcontacts");
 const ForgotUserroute = require("./Forms/ForgotUser");
 
 // Use Routes
-app.use("/api", signupandloginroute);
-app.use("/api", conversationroute);
-app.use("/api", addcontactroute);
-app.use("/api", Fetchcontactroute);
-app.use("/api", fetchedmessageroute);
-app.use("/api", ForgotUserroute);
+app.use("/", signupandloginroute);
+app.use("/", conversationroute);
+app.use("/", addcontactroute);
+app.use("/", Fetchcontactroute);
+app.use("/", fetchedmessageroute);
+app.use("/", ForgotUserroute);
 
 const PORT = process.env.PORT || 3000;
 connectionDB()
