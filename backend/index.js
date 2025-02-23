@@ -12,10 +12,26 @@ const server = http.createServer(app);
 
 app.use(
   cors({
-    origin: "https://chit-chat-mocha.vercel.app",
-    credentials: true,
+    origin: [
+      "https://chit-chat-mocha.vercel.app",
+      "https://chat-chit-six.vercel.app",
+    ], // Allow both frontend and API domains
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true, // Allow cookies/session-based authentication
   })
 );
+
+app.use((req, res, next) => {
+  res.header(
+    "Access-Control-Allow-Origin",
+    "https://chit-chat-mocha.vercel.app"
+  );
+  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE");
+  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  res.header("Access-Control-Allow-Credentials", "true");
+  next();
+});
+
 app.use(express.json({ limit: "500mb" }));
 
 const io = new Server(server, {
