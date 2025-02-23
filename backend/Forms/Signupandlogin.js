@@ -11,129 +11,136 @@ const { hash, compare } = require("bcryptjs");
 const jsonwebtoken = require("jsonwebtoken");
 
 // POST route for user signup
-router.post("/signup", signupvalidation, async (req, res) => {
-  const errorobject = {};
-  // Handle validation errors
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    errors.array().forEach((object) => {
-      errorobject[object.path] = object.msg;
-    });
-    return res.status(400).json({
-      error: errorobject,
-    });
-  }
+router.post(
+  "https://chit-chat-mocha.vercel.app/signup",
+  signupvalidation,
+  async (req, res) => {
+    const errorobject = {};
+    // Handle validation errors
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      errors.array().forEach((object) => {
+        errorobject[object.path] = object.msg;
+      });
+      return res.status(400).json({
+        error: errorobject,
+      });
+    }
 
-  // Extract data from the request body
-  const { Name, Email, Mobile, Password, Photo } = req.body;
+    // Extract data from the request body
+    const { Name, Email, Mobile, Password, Photo } = req.body;
 
-  if (!Name || !Email || !Mobile || !Password) {
-    return res.status(400).json({
-      message: "Field cannot be empty",
-    });
-  }
+    if (!Name || !Email || !Mobile || !Password) {
+      return res.status(400).json({
+        message: "Field cannot be empty",
+      });
+    }
 
-  // Check if user already exists
-  const userexist = await UserSchema.findOne({
-    $or: [{ Mobile: Mobile }, { Email: Email }],
-  });
-
-  if (userexist) {
-    return res.status(400).json({
-      message: "The User already exists",
-    });
-  }
-
-  
-  // Hash the password
-  const hashpassword = await hash(Password, 10);
-
-  try {
-    // Create a new user
-    const createuser = new UserSchema({
-      Email: Email,
-      Name: Name,
-      Mobile: Mobile,
-      Password: hashpassword,
-      Photo:
-        Photo ||
-        "https://static-00.iconduck.com/assets.00/avatar-default-icon-988x1024-zsfboql5.png", // Use default if no photo is provided
-    });
-
-    // Save the user to the database
-    await createuser.save();
-
-    return res.status(200).json({
-      message: "User is registered successfully",
-    });
-  } catch (error) {
-    console.error("User not registered:", error);
-    return res.status(500).json({
-      message: "An error occurred while registering the user",
-    });
-  }
-});
-
-router.post("/login", loginvalidation, async (req, res) => {
-  const errors = validationResult(req);
-  const { Email, Mobile, Password } = req.body;
-  const errorobject = {}; // Define errorobject here
-
-  if (!errors.isEmpty()) {
-    errors.array().forEach((object) => {
-      errorobject[object.path] = object.msg;
-    });
-    return res.status(400).json({
-      error: errorobject,
-    });
-  }
-
-  try {
+    // Check if user already exists
     const userexist = await UserSchema.findOne({
       $or: [{ Mobile: Mobile }, { Email: Email }],
     });
 
     if (userexist) {
-      const passwordmatched = await compare(Password, userexist.Password);
-      if (passwordmatched) {
-        const token = jsonwebtoken.sign(
-          { id: userexist._id, Mobile: userexist.Mobile },
-          process.env.SECRET_KEY,
-          { expiresIn: "1d" }
-        );
-        return res.status(200).json({
-          message: "The user logged in successfully",
-          Token: token,
-          id: userexist._id,
-          Mobile: userexist.Mobile,
-          Photo: userexist.Photo,
-          Bio: userexist.Bio,
-          Name: userexist.Name,
-          Email: userexist.Email,
-        });
-      } else {
-        errorobject.Password = "The wrong password was entered";
-        return res.status(400).json({
-          error: errorobject,
-        });
-      }
-    } else {
-      if (Mobile) {
-        errorobject.Mobile = "This user doesn't exist";
-      } else {
-        errorobject.Email = "The user doesn't exist";
-      }
+      return res.status(400).json({
+        message: "The User already exists",
+      });
+    }
+
+    // Hash the password
+    const hashpassword = await hash(Password, 10);
+
+    try {
+      // Create a new user
+      const createuser = new UserSchema({
+        Email: Email,
+        Name: Name,
+        Mobile: Mobile,
+        Password: hashpassword,
+        Photo:
+          Photo ||
+          "https://static-00.iconduck.com/assets.00/avatar-default-icon-988x1024-zsfboql5.png", // Use default if no photo is provided
+      });
+
+      // Save the user to the database
+      await createuser.save();
+
+      return res.status(200).json({
+        message: "User is registered successfully",
+      });
+    } catch (error) {
+      console.error("User not registered:", error);
+      return res.status(500).json({
+        message: "An error occurred while registering the user",
+      });
+    }
+  }
+);
+
+router.post(
+  "https://chit-chat-mocha.vercel.app/login",
+  loginvalidation,
+  async (req, res) => {
+    const errors = validationResult(req);
+    const { Email, Mobile, Password } = req.body;
+    const errorobject = {}; // Define errorobject here
+
+    if (!errors.isEmpty()) {
+      errors.array().forEach((object) => {
+        errorobject[object.path] = object.msg;
+      });
       return res.status(400).json({
         error: errorobject,
       });
     }
-  } catch (error) {
-    console.error("Login error:", error);
-    return res.status(500).json({
-      message: "An error occurred during login",
-    });
+
+    try {
+      const userexist = await UserSchema.findOne({
+        $or: [{ Mobile: Mobile }, { Email: Email }],
+      });
+
+      if (userexist) {
+        const passwordmatched = await compare(Password, userexist.Password);
+        if (passwordmatched) {
+          const token = jsonwebtoken.sign(
+            { id: userexist._id, Mobile: userexist.Mobile },
+            process.env.SECRET_KEY,
+            { expiresIn: "1d" }
+          );
+          return res.status(200).json({
+            message: "The user logged in successfully",
+            Token: token,
+            id: userexist._id,
+            Mobile: userexist.Mobile,
+            Photo: userexist.Photo,
+            Bio: userexist.Bio,
+            Name: userexist.Name,
+            Email: userexist.Email,
+          });
+        } else {
+          errorobject.Password = "The wrong password was entered";
+          return res.status(400).json({
+            error: errorobject,
+          });
+        }
+      } else {
+        if (Mobile) {
+          errorobject.Mobile = "This user doesn't exist";
+        } else {
+          errorobject.Email = "The user doesn't exist";
+        }
+        return res.status(400).json({
+          error: errorobject,
+        });
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      return res.status(500).json({
+        message: "An error occurred during login",
+      });
+    }
   }
-});
+);
 
 // Middleware to validate token
 const authenticateToken = (req, res, next) => {
@@ -155,7 +162,7 @@ const authenticateToken = (req, res, next) => {
 
 // Change Password Route
 router.post(
-  "/change-password",
+  "https://chit-chat-mocha.vercel.app/change-password",
   authenticateToken,
   changePasswordValidation,
   async (req, res) => {
@@ -224,7 +231,7 @@ router.post(
   }
 );
 
-router.post("/logout", (req, res) => {
+router.post("https://chit-chat-mocha.vercel.app/logout", (req, res) => {
   // Clear the cookie
   res.clearCookie("token");
   // Optionally, handle token invalidation logic here (e.g., add to blacklist)
