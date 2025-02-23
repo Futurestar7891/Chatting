@@ -10,27 +10,33 @@ dotenv.config();
 const app = express();
 const server = http.createServer(app);
 
-// Updated CORS configuration
+const allowedOrigins = [
+  "https://chit-chat-mocha.vercel.app",
+  "https://chat-chit-six.vercel.app",
+];
+
 app.use(
   cors({
-    origin: [
-      "https://chit-chat-mocha.vercel.app",
-      "https://chat-chit-six.vercel.app",
-    ],
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
   })
 );
 
-app.use(express.json({ limit: "500mb" }));
+app.options("*", cors()); // Handle preflight requests globally
 
-// Handle preflight requests globally
-app.options("*", cors());
+app.use(express.json({ limit: "500mb" }));
 
 const io = new Server(server, {
   cors: {
-    origin: "https://chit-chat-mocha.vercel.app",
+    origin: allowedOrigins,
     methods: ["GET", "POST"],
     credentials: true,
   },
